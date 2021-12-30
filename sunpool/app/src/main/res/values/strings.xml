@@ -20,7 +20,7 @@
     <string name="_24h_avg_hashrate">24h Avg Hashrate</string>
     <string name="shares_accepted">Shares Accepted</string>
     <string name="invalid_shares">Invalid Shares</string>
-    <string name="network_hashrate">Network Hashrate</string>
+    <string name="network_hashrate">Network Hash.</string>
     <string name="pool_hashrate">Pool Hashrate</string>
     <string name="current_pool">Current Pool</string>
 </resources>
