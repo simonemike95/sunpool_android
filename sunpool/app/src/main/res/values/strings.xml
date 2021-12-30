@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Sunpool</string>
+    <string name="title_home">Home</string>
+    <string name="title_workers">Workers</string>
+    <string name="title_pool">Pool Stats</string>
+    <string name="balance">Balance</string>
+    <string name="available">Available</string>
+    <string name="unconfirmed">Unconfirmed</string>
+    <string name="total_paid">Total Paid</string>
+    <string name="earnings">Earnings</string>
+    <string name="last_hour">Last hour</string>
+    <string name="last_day">Last Day</string>
+    <string name="last_7_days">Last 7 Days</string>
+    <string name="last_30_days">Last 30 Days</string>
+    <string name="miner_public_key">Miner Public Key</string>
+    <string name="workers">Workers</string>
+    <string name="current_hashrate">Current Hashrate</string>
+    <string name="_1h_avg_hashrate">1h Avg Hashrate</string>
+    <string name="_6h_avg_hashrate">6h Avg Hashrate</string>
+    <string name="_24h_avg_hashrate">24h Avg Hashrate</string>
+    <string name="shares_accepted">Shares Accepted</string>
+    <string name="invalid_shares">Invalid Shares</string>
+    <string name="network_hashrate">Network Hashrate</string>
+    <string name="pool_hashrate">Pool Hashrate</string>
+    <string name="current_pool">Current Pool</string>
+</resources>
