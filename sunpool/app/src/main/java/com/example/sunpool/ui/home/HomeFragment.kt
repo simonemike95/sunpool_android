@@ -1,6 +1,7 @@
 package com.example.sunpool.ui.home
 
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,21 +16,9 @@ import androidx.lifecycle.ViewModelProvider
 import com.android.volley.Request
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-import com.example.sunpool.MainActivity
 import com.example.sunpool.databinding.FragmentHomeBinding
-import com.google.gson.JsonParser
 import com.google.gson.JsonParser.parseString
 import java.text.DecimalFormat
-import java.util.*
-import android.content.Context.MODE_PRIVATE
-
-import android.content.SharedPreferences
-import android.content.Context.MODE_PRIVATE
-
-
-
-
-
 
 
 class HomeFragment : Fragment() {
@@ -65,12 +54,12 @@ class HomeFragment : Fragment() {
     private var totalPaidBalance: TextView? = null
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
-    ): View? {
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         homeViewModel =
-                ViewModelProvider(this).get(HomeViewModel::class.java)
+            ViewModelProvider(this)[HomeViewModel::class.java]
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
@@ -200,16 +189,16 @@ class HomeFragment : Fragment() {
     private fun fillDataFromJson(textView: TextView, responseData: String, appendString: String?) {
         val jsonObject = parseString(responseData).asJsonObject
 
-        if(textView == numWorkers) {
+        if (textView == numWorkers) {
             // Do something specific...
-        } else if(textView == oneHourAvgHashrate) {
+        } else if (textView == oneHourAvgHashrate) {
             // Do something else...
         }
         // ... continue as needed
     }
 
     private fun fillWorkersData(responseData: String) {
-        if(responseData == "") {
+        if (responseData == "") {
             Toast.makeText(context, "Missing miner public key", Toast.LENGTH_SHORT).show()
             return
         }
@@ -240,12 +229,13 @@ class HomeFragment : Fragment() {
         currentHashrate!!.text = df.format(totalCurrentHashrate).toString() + " Sol/s"
         oneHourAvgHashrate!!.text = df.format(totalOneHourHashrate).toString() + " Sol/s"
         sixHourAvgHashrate!!.text = df.format(totalSixHourHashrate).toString() + " Sol/s"
-        twentyFourHourAvgHashrate!!.text = df.format(totalTwentyFourHourHashrate).toString() + " Sol/s"
+        twentyFourHourAvgHashrate!!.text =
+            df.format(totalTwentyFourHourHashrate).toString() + " Sol/s"
         invalidShares!!.text = totalInvalidShares.toString()
     }
 
     private fun fillEarningsData(responseData: String) {
-        if(responseData == "") {
+        if (responseData == "") {
             // Output to alert user of problem handled in fillWorkersData since it is called first
             return
         }
@@ -257,7 +247,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun fillBalanceData(responseData: String) {
-        if(responseData == "") {
+        if (responseData == "") {
             // Output to alert user of problem handled in fillWorkersData since it is called first
             return
         }
@@ -265,8 +255,13 @@ class HomeFragment : Fragment() {
         val jsonObject = parseString(responseData).asJsonObject
         val jsonData = jsonObject.get("data").asJsonObject
 
-        availableBalance!!.text = jsonData!!.get("availableBalance").toString()
-        unconfirmedBalance!!.text = jsonData.get("unconfirmedBalance").toString()
-        totalPaidBalance!!.text = jsonData.get("totalPaid").toString()
+        val df = DecimalFormat("######.######")
+
+        availableBalance!!.text =
+            df.format(jsonData!!.get("availableBalance").asDouble).toString() + " Beam"
+        unconfirmedBalance!!.text =
+            df.format(jsonData!!.get("unconfirmedBalance").asDouble).toString() + " Beam"
+        totalPaidBalance!!.text =
+            df.format(jsonData!!.get("totalPaid").asDouble).toString() + " Beam"
     }
 }
