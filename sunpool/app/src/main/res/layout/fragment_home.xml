@@ -6,38 +6,40 @@
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeFragment">
 
-    <!--    <ImageView-->
-    <!--        android:id="@+id/beam_logo"-->
-    <!--        android:layout_width="100dp"-->
-    <!--        android:layout_height="100dp"-->
-    <!--        android:scaleType="centerCrop"-->
-    <!--        android:src="@drawable/beam_logo"-->
-    <!--        app:layout_constraintStart_toStartOf="parent"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintTop_toTopOf="parent" />-->
+    <ImageView
+        android:id="@+id/beam_logo"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="8dp"
+        android:scaleType="centerCrop"
+        android:scaleX="1.25"
+        android:scaleY="1.25"
+        android:src="@drawable/beam_logo"
+        app:layout_constraintStart_toStartOf="@id/public_key"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/short_stats"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginStart="8dp"
         android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="@+id/beam_logo"
         app:layout_constraintEnd_toEndOf="@id/public_key"
-        app:layout_constraintStart_toStartOf="@id/public_key"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintStart_toEndOf="@id/beam_logo"
+        app:layout_constraintTop_toTopOf="@id/beam_logo">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/textView35"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/current_pool"
-                android:textStyle="bold" />
+            <!--            <TextView-->
+            <!--                android:id="@+id/textView35"-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:text="@string/current_pool"-->
+            <!--                android:textStyle="bold" />-->
 
             <TextView
                 android:id="@+id/textView36"
@@ -55,17 +57,16 @@
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="1.25"
-            android:orientation="vertical"
-            android:paddingHorizontal="4dp">
+            android:layout_marginHorizontal="8dp"
+            android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/current_pool"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Pool" />
+            <!--            <TextView-->
+            <!--                android:id="@+id/current_pool"-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:text="Pool" />-->
 
             <TextView
                 android:id="@+id/network_hashrate"
@@ -82,19 +83,31 @@
 
     </LinearLayout>
 
-    <TextView
+    <EditText
         android:id="@+id/public_key"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="32dp"
         android:layout_marginVertical="16dp"
         android:background="@color/cardview_shadow_start_color"
-        android:padding="4dp"
-        android:text="@string/miner_public_key"
+        android:hint="@string/miner_public_key"
+        android:inputType="textLongMessage"
+        android:maxLines="1"
+        android:minHeight="48dp"
         android:textAlignment="center"
+        android:textIsSelectable="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/short_stats" />
+        app:layout_constraintTop_toBottomOf="@id/beam_logo" />
+
+    <Button
+        android:id="@+id/refresh_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Refresh"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/public_key" />
 
     <LinearLayout
         android:id="@+id/workers_layout"
@@ -107,7 +120,7 @@
         android:padding="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/public_key">
+        app:layout_constraintTop_toBottomOf="@id/refresh_btn">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -214,7 +227,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="32dp"
-        android:layout_marginVertical="16dp"
+        android:layout_marginVertical="8dp"
         android:background="@color/cardview_shadow_start_color"
         android:padding="4dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -309,12 +322,13 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="32dp"
-        android:layout_marginVertical="16dp"
+        android:layout_marginVertical="8dp"
         android:background="@color/cardview_shadow_start_color"
         android:padding="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/earnings_layout">
+        app:layout_constraintTop_toBottomOf="@+id/earnings_layout"
+        android:layout_marginBottom="40dp">
 
         <LinearLayout
             android:layout_width="match_parent"

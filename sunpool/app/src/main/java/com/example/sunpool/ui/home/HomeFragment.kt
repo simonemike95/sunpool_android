@@ -1,20 +1,36 @@
 package com.example.sunpool.ui.home
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.android.volley.Request
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.example.sunpool.MainActivity
 import com.example.sunpool.databinding.FragmentHomeBinding
 import com.google.gson.JsonParser
 import com.google.gson.JsonParser.parseString
 import java.text.DecimalFormat
 import java.util.*
+import android.content.Context.MODE_PRIVATE
+
+import android.content.SharedPreferences
+import android.content.Context.MODE_PRIVATE
+
+
+
+
+
+
 
 class HomeFragment : Fragment() {
 
@@ -25,15 +41,12 @@ class HomeFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    // Use this to store our response from any GET requests done in this fragment
-    private var responseString: String? = null
-
     // All our TextViews that we'll need to fill in
-    private var currentPoolText: TextView? = null
     private var networkHashrate: TextView? = null
     private var poolHashrate: TextView? = null
 
-    private var minerPublicKey: TextView? = null
+    private var minerPublicKey: EditText? = null
+    private var refreshButton: Button? = null
 
     private var numWorkers: TextView? = null
     private var currentHashrate: TextView? = null
@@ -62,14 +75,16 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        // TODO: Get icon dynamically?
-        //  Can grab from https://beam.sunpool.top/assets/img/beam-logo-small.png
-
-        currentPoolText = binding.currentPool
         networkHashrate = binding.networkHashrate
         poolHashrate = binding.poolHashrate
 
         minerPublicKey = binding.publicKey
+        loadSharedPrefs()
+
+        refreshButton = binding.refreshBtn
+        refreshButton!!.setOnClickListener {
+            refreshPressed()
+        }
 
         numWorkers = binding.numWorkers
         currentHashrate = binding.hashrateCurrent
@@ -93,31 +108,56 @@ class HomeFragment : Fragment() {
             poolHashrate!!, " Sol/s"
         )
 
-        // Get data for workers
-        doComplexGet(
-            // FIXME: Replace miner address with input from textview
-            "https://beam.sunpool.top/api.php?query=miner-workers&miner=23671e9ac0c60d6c7411aa705ba10c8a2f206ab0814cecc456e2546c60baf606",
-            "workers"
-            )
-
-        // TODO: Get data for earnings
-
-        // Get data for balance
-        doComplexGet(
-            "https://beam.sunpool.top/api.php?query=miner-balances&miner=23671e9ac0c60d6c7411aa705ba10c8a2f206ab0814cecc456e2546c60baf606",
-            "balance"
-        )
-
-        // FIXME: Get this dynamically from a somewhere
-        // TODO: Allow switching between Grin and Beam pools
-        currentPoolText?.text = "Beam"
-
         return root
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun loadSharedPrefs() {
+        // TODO: Get shared preferences and check for miner public key
+        //  If the entry exists, fill it in and run the fetch automatically
+        val prefs = requireContext().getSharedPreferences("SUNPOOL_PREFS", MODE_PRIVATE)
+        val loadedKey = prefs.getString("PUBLIC_KEY", null)
+
+        minerPublicKey!!.setText(loadedKey)
+        refreshPressed()
+    }
+
+    private fun refreshPressed() {
+        fetchData()
+        val view = this.activity?.currentFocus
+        val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(view?.windowToken, 0)
+
+        // Save the public key for later so user doesn't have to enter it every time
+        val editor = requireContext().getSharedPreferences("SUNPOOL_PREFS", MODE_PRIVATE).edit()
+        editor.putString("PUBLIC_KEY", minerPublicKey!!.text.toString())
+        editor.apply()
+    }
+
+    private fun fetchData() {
+        // Use the miner public key value to fetch data
+        // Get data for workers
+        val minerInfoUrl =
+            "https://beam.sunpool.top/api.php?query=miner-workers&miner=" + minerPublicKey?.text
+        val balanceInfoUrl =
+            "https://beam.sunpool.top/api.php?query=miner-balances&miner=" + minerPublicKey?.text
+
+        doComplexGet(
+            minerInfoUrl,
+            "workers"
+        )
+
+        // TODO: Get data for earnings
+
+        // Get data for balance
+        doComplexGet(
+            balanceInfoUrl,
+            "balance"
+        )
     }
 
     private fun doSimpleGet(urlString: String, textView: TextView, appendString: String) {
@@ -169,6 +209,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun fillWorkersData(responseData: String) {
+        if(responseData == "") {
+            Toast.makeText(context, "Missing miner public key", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val jsonObject = parseString(responseData).asJsonObject
         val workersArray = jsonObject.get("data").asJsonArray
 
@@ -200,17 +245,27 @@ class HomeFragment : Fragment() {
     }
 
     private fun fillEarningsData(responseData: String) {
+        if(responseData == "") {
+            // Output to alert user of problem handled in fillWorkersData since it is called first
+            return
+        }
+
         val jsonObject = parseString(responseData).asJsonObject
         val workersArray = jsonObject.get("data").asJsonArray
 
-
+        // TODO: Can't get balance data from API yet
     }
 
     private fun fillBalanceData(responseData: String) {
+        if(responseData == "") {
+            // Output to alert user of problem handled in fillWorkersData since it is called first
+            return
+        }
+
         val jsonObject = parseString(responseData).asJsonObject
         val jsonData = jsonObject.get("data").asJsonObject
 
-        availableBalance!!.text = jsonData.get("availableBalance").toString()
+        availableBalance!!.text = jsonData!!.get("availableBalance").toString()
         unconfirmedBalance!!.text = jsonData.get("unconfirmedBalance").toString()
         totalPaidBalance!!.text = jsonData.get("totalPaid").toString()
     }

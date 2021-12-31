@@ -6,7 +6,7 @@
         <entry key="app/src/main/res/drawable/ic_notifications_black_24dp.xml" value="0.3921875" />
         <entry key="app/src/main/res/drawable/ic_workers_24dp.xml" value="0.3921875" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.37604166666666666" />
-        <entry key="app/src/main/res/layout/fragment_home.xml" value="0.5" />
+        <entry key="app/src/main/res/layout/fragment_home.xml" value="0.21354166666666666" />
         <entry key="app/src/main/res/layout/fragment_stats.xml" value="0.37604166666666666" />
         <entry key="app/src/main/res/layout/fragment_workers.xml" value="0.37604166666666666" />
         <entry key="app/src/main/res/menu/bottom_nav_menu.xml" value="0.37604166666666666" />
