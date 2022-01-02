@@ -11,6 +11,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.UiThread
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.android.volley.Request
@@ -18,7 +19,22 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.sunpool.databinding.FragmentHomeBinding
 import com.google.gson.JsonParser.parseString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import org.w3c.dom.Document
+import org.xml.sax.InputSource
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.io.StringReader
+import java.lang.StringBuilder
+import java.net.URL
 import java.text.DecimalFormat
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.xpath.XPathConstants
+import javax.xml.xpath.XPathExpression
+import javax.xml.xpath.XPathFactory
 
 
 class HomeFragment : Fragment() {
@@ -91,7 +107,7 @@ class HomeFragment : Fragment() {
         unconfirmedBalance = binding.balanceUnconfirmed
         totalPaidBalance = binding.balanceTotalPaid
 
-        // Get the pool hashrate and fill the textview
+        fillNetworkData()
         doSimpleGet(
             "https://beam.sunpool.top/pool-info.php?pool-hash-rate-current",
             poolHashrate!!, " Sol/s"
@@ -128,19 +144,26 @@ class HomeFragment : Fragment() {
     }
 
     private fun fetchData() {
+        fillNetworkData()
+        doSimpleGet(
+            "https://beam.sunpool.top/pool-info.php?pool-hash-rate-current",
+            poolHashrate!!, " Sol/s"
+        )
+
         // Use the miner public key value to fetch data
-        // Get data for workers
         val minerInfoUrl =
             "https://beam.sunpool.top/api.php?query=miner-workers&miner=" + minerPublicKey?.text
         val balanceInfoUrl =
             "https://beam.sunpool.top/api.php?query=miner-balances&miner=" + minerPublicKey?.text
 
+        // Get data for workers
         doComplexGet(
             minerInfoUrl,
             "workers"
         )
 
-        // TODO: Get data for earnings
+        // Get data for earnings
+        fillEarningsData()
 
         // Get data for balance
         doComplexGet(
@@ -186,15 +209,30 @@ class HomeFragment : Fragment() {
         queue.add(stringRequest)
     }
 
-    private fun fillDataFromJson(textView: TextView, responseData: String, appendString: String?) {
-        val jsonObject = parseString(responseData).asJsonObject
+    private fun fillNetworkData() {
+        GlobalScope.launch(Dispatchers.IO) {
+            val url = URL("https://beam.sunpool.top")
+            var reader: BufferedReader? = null
+            val builder = StringBuilder()
+            try {
+                reader = BufferedReader(InputStreamReader(url.openStream(), "UTF-8"))
+                for (line in reader.readLines()) {
+                    builder.append(line.trim { it <= ' ' })
+                }
+            } finally {
+                if (reader != null) try {
+                    reader.close()
+                } catch (logOrIgnore: IOException) {
+                }
+            }
 
-        if (textView == numWorkers) {
-            // Do something specific...
-        } else if (textView == oneHourAvgHashrate) {
-            // Do something else...
+//            var start = "Network:"
+            var start = "Network: <br class=\"d-lg-none\" /><strongclass=\"text-nowrap\">"
+            var end = " KS<span class=\"d-lg-none\">.</span>"
+            var part = builder.substring(builder.indexOf(start) + start.length)
+            var line = part.substring(0, part.indexOf(end))
+            networkHashrate!!.text = line + " KSol/s"
         }
-        // ... continue as needed
     }
 
     private fun fillWorkersData(responseData: String) {
@@ -207,7 +245,7 @@ class HomeFragment : Fragment() {
         val workersArray = jsonObject.get("data").asJsonArray
 
         // FIXME: Currently counts workers that are down... Add a check
-        //  that takes into account last seen time. >120 seconds and do not count worker
+        //  that takes into account last seen time. >11 minutes and do not count worker
         //  Or check workers down alert link and subtract num of names from array size
         numWorkers!!.text = workersArray.size().toString()
 
@@ -234,16 +272,52 @@ class HomeFragment : Fragment() {
         invalidShares!!.text = totalInvalidShares.toString()
     }
 
-    private fun fillEarningsData(responseData: String) {
-        if (responseData == "") {
-            // Output to alert user of problem handled in fillWorkersData since it is called first
-            return
+    private fun fillEarningsData() {
+        GlobalScope.launch(Dispatchers.IO) {
+            val url = URL("https://beam.sunpool.top/miner-stats.php?miner=" + minerPublicKey!!.text)
+            var reader: BufferedReader? = null
+            val builder = StringBuilder()
+            try {
+                reader = BufferedReader(InputStreamReader(url.openStream(), "UTF-8"))
+                for (line in reader.readLines()) {
+                    builder.append(line.trim { it <= ' ' })
+                }
+            } finally {
+                if (reader != null) try {
+                    reader.close()
+                } catch (logOrIgnore: IOException) {
+                }
+            }
+
+            val df = DecimalFormat("######.######")
+            var start = "Last Hour Earnings:"
+            var end = " Beam</span></td>"
+            var part = builder.substring(builder.indexOf(start) + start.length)
+            var line = part.substring(0, part.indexOf(end))
+            var result = line.substring(67 until line.length)
+            lastHour!!.text = df.format(result.toDouble()) + " Beam"
+
+            // Last day earnings
+            start = "in the last day\">"
+            end = " Beam</abbr></span></td>"
+            part = builder.substring(builder.indexOf(start) + start.length)
+            line = part.substring(0, part.indexOf(end))
+            lastDay!!.text = df.format(line.toDouble()) + " Beam"
+
+            // Last 7 days earnings
+            start = "in the last 7 days\">"
+            end = " Beam</abbr></span></td>"
+            part = builder.substring(builder.indexOf(start) + start.length)
+            line = part.substring(0, part.indexOf(end))
+            lastSevenDays!!.text = df.format(line.toDouble()) + " Beam"
+
+            // Last 30 days earnings
+            start = "in the last 30 days\">"
+            end = " Beam</abbr></span></td>"
+            part = builder.substring(builder.indexOf(start) + start.length)
+            line = part.substring(0, part.indexOf(end))
+            lastThirtyDays!!.text = df.format(line.toDouble()).toString() + " Beam"
         }
-
-        val jsonObject = parseString(responseData).asJsonObject
-        val workersArray = jsonObject.get("data").asJsonArray
-
-        // TODO: Can't get balance data from API yet
     }
 
     private fun fillBalanceData(responseData: String) {
@@ -256,7 +330,6 @@ class HomeFragment : Fragment() {
         val jsonData = jsonObject.get("data").asJsonObject
 
         val df = DecimalFormat("######.######")
-
         availableBalance!!.text =
             df.format(jsonData!!.get("availableBalance").asDouble).toString() + " Beam"
         unconfirmedBalance!!.text =
