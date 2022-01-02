@@ -11,7 +11,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.UiThread
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.android.volley.Request
@@ -22,19 +21,11 @@ import com.google.gson.JsonParser.parseString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.w3c.dom.Document
-import org.xml.sax.InputSource
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.io.StringReader
-import java.lang.StringBuilder
 import java.net.URL
 import java.text.DecimalFormat
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.xpath.XPathConstants
-import javax.xml.xpath.XPathExpression
-import javax.xml.xpath.XPathFactory
 
 
 class HomeFragment : Fragment() {
@@ -128,7 +119,9 @@ class HomeFragment : Fragment() {
         val loadedKey = prefs.getString("PUBLIC_KEY", null)
 
         minerPublicKey!!.setText(loadedKey)
-        refreshPressed()
+        if (minerPublicKey!!.text.isNotEmpty()) {
+            refreshPressed()
+        }
     }
 
     private fun refreshPressed() {
@@ -152,9 +145,9 @@ class HomeFragment : Fragment() {
 
         // Use the miner public key value to fetch data
         val minerInfoUrl =
-            "https://beam.sunpool.top/api.php?query=miner-workers&miner=" + minerPublicKey?.text
+            "https://beam.sunpool.top/api.php?query=miner-workers&miner=${minerPublicKey?.text}"
         val balanceInfoUrl =
-            "https://beam.sunpool.top/api.php?query=miner-balances&miner=" + minerPublicKey?.text
+            "https://beam.sunpool.top/api.php?query=miner-balances&miner=${minerPublicKey?.text}"
 
         // Get data for workers
         doComplexGet(
@@ -177,7 +170,10 @@ class HomeFragment : Fragment() {
         val stringRequest = StringRequest(Request.Method.GET, urlString,
             { response ->
                 println("Response is: $response")
-                textView.text = response + appendString
+
+                requireActivity().runOnUiThread {
+                    textView.text = "$response$appendString"
+                }
             },
             {
                 println("Error")
@@ -226,12 +222,14 @@ class HomeFragment : Fragment() {
                 }
             }
 
-//            var start = "Network:"
-            var start = "Network: <br class=\"d-lg-none\" /><strongclass=\"text-nowrap\">"
-            var end = " KS<span class=\"d-lg-none\">.</span>"
-            var part = builder.substring(builder.indexOf(start) + start.length)
-            var line = part.substring(0, part.indexOf(end))
-            networkHashrate!!.text = line + " KSol/s"
+            val start = "Network: <br class=\"d-lg-none\" /><strongclass=\"text-nowrap\">"
+            val end = " KS<span class=\"d-lg-none\">.</span>"
+            val part = builder.substring(builder.indexOf(start) + start.length)
+            val line = part.substring(0, part.indexOf(end))
+
+            requireActivity().runOnUiThread {
+                networkHashrate!!.text = "$line KSol/s"
+            }
         }
     }
 
@@ -247,7 +245,7 @@ class HomeFragment : Fragment() {
         // FIXME: Currently counts workers that are down... Add a check
         //  that takes into account last seen time. >11 minutes and do not count worker
         //  Or check workers down alert link and subtract num of names from array size
-        numWorkers!!.text = workersArray.size().toString()
+
 
         var totalCurrentHashrate = 0.0
         var totalOneHourHashrate = 0.0
@@ -263,18 +261,25 @@ class HomeFragment : Fragment() {
             totalInvalidShares += workersArray[it].asJsonObject.get("invalidShares24h").asInt
         }
 
-        val df = DecimalFormat("#####.##")
-        currentHashrate!!.text = df.format(totalCurrentHashrate).toString() + " Sol/s"
-        oneHourAvgHashrate!!.text = df.format(totalOneHourHashrate).toString() + " Sol/s"
-        sixHourAvgHashrate!!.text = df.format(totalSixHourHashrate).toString() + " Sol/s"
-        twentyFourHourAvgHashrate!!.text =
-            df.format(totalTwentyFourHourHashrate).toString() + " Sol/s"
-        invalidShares!!.text = totalInvalidShares.toString()
+        requireActivity().runOnUiThread {
+            numWorkers!!.text = workersArray.size().toString()
+
+            val df = DecimalFormat("#####.##")
+            currentHashrate!!.text = "${df.format(totalCurrentHashrate)} Sol/s"
+            oneHourAvgHashrate!!.text = "${df.format(totalOneHourHashrate)} Sol/s"
+            sixHourAvgHashrate!!.text = "${df.format(totalSixHourHashrate)} Sol/s"
+            twentyFourHourAvgHashrate!!.text = "${df.format(totalTwentyFourHourHashrate)} Sol/s"
+            invalidShares!!.text = "$totalInvalidShares"
+        }
     }
 
     private fun fillEarningsData() {
+        if (minerPublicKey!!.text.isEmpty()) {
+            return
+        }
+
         GlobalScope.launch(Dispatchers.IO) {
-            val url = URL("https://beam.sunpool.top/miner-stats.php?miner=" + minerPublicKey!!.text)
+            val url = URL("https://beam.sunpool.top/miner-stats.php?miner=${minerPublicKey!!.text}")
             var reader: BufferedReader? = null
             val builder = StringBuilder()
             try {
@@ -290,33 +295,40 @@ class HomeFragment : Fragment() {
             }
 
             val df = DecimalFormat("######.######")
-            var start = "Last Hour Earnings:"
+                    var start = "<th scope=\"row\">Last Hour Earnings:</th><td><span class=\"font-weight-bold pl-1\""
             var end = " Beam</span></td>"
             var part = builder.substring(builder.indexOf(start) + start.length)
             var line = part.substring(0, part.indexOf(end))
-            var result = line.substring(67 until line.length)
-            lastHour!!.text = df.format(result.toDouble()) + " Beam"
+            val result = line.split(">")[1]
+            val lastHourString = "${df.format(result.toDouble())} Beam"
 
             // Last day earnings
             start = "in the last day\">"
             end = " Beam</abbr></span></td>"
             part = builder.substring(builder.indexOf(start) + start.length)
             line = part.substring(0, part.indexOf(end))
-            lastDay!!.text = df.format(line.toDouble()) + " Beam"
+            val lastDayString = "${df.format(line.toDouble())} Beam"
 
             // Last 7 days earnings
             start = "in the last 7 days\">"
             end = " Beam</abbr></span></td>"
             part = builder.substring(builder.indexOf(start) + start.length)
             line = part.substring(0, part.indexOf(end))
-            lastSevenDays!!.text = df.format(line.toDouble()) + " Beam"
+            val lastSevenDaysString = "${df.format(line.toDouble())} Beam"
 
             // Last 30 days earnings
             start = "in the last 30 days\">"
             end = " Beam</abbr></span></td>"
             part = builder.substring(builder.indexOf(start) + start.length)
             line = part.substring(0, part.indexOf(end))
-            lastThirtyDays!!.text = df.format(line.toDouble()).toString() + " Beam"
+            val lastThirtyDaysString = "${df.format(line.toDouble())} Beam"
+
+            requireActivity().runOnUiThread {
+                lastHour!!.text = lastHourString
+                lastDay!!.text = lastDayString
+                lastSevenDays!!.text = lastSevenDaysString
+                lastThirtyDays!!.text = lastThirtyDaysString
+            }
         }
     }
 
@@ -329,12 +341,14 @@ class HomeFragment : Fragment() {
         val jsonObject = parseString(responseData).asJsonObject
         val jsonData = jsonObject.get("data").asJsonObject
 
-        val df = DecimalFormat("######.######")
-        availableBalance!!.text =
-            df.format(jsonData!!.get("availableBalance").asDouble).toString() + " Beam"
-        unconfirmedBalance!!.text =
-            df.format(jsonData!!.get("unconfirmedBalance").asDouble).toString() + " Beam"
-        totalPaidBalance!!.text =
-            df.format(jsonData!!.get("totalPaid").asDouble).toString() + " Beam"
+        requireActivity().runOnUiThread {
+            val df = DecimalFormat("######.######")
+            availableBalance!!.text =
+                "${df.format(jsonData!!.get("availableBalance").asDouble)} Beam"
+            unconfirmedBalance!!.text =
+                "${df.format(jsonData!!.get("unconfirmedBalance").asDouble)} Beam"
+            totalPaidBalance!!.text =
+                "${df.format(jsonData!!.get("totalPaid").asDouble)} Beam"
+        }
     }
 }
