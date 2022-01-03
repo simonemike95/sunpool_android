@@ -23,4 +23,6 @@
     <string name="network_hashrate">Network</string>
     <string name="pool_hashrate">Pool</string>
     <string name="current_pool">Current Pool</string>
+    <string name="worker_name">Worker Name</string>
+    <string name="last_seen">Last Seen</string>
 </resources>

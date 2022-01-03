@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.android.volley.Request
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.example.sunpool.Utils
 import com.example.sunpool.databinding.FragmentHomeBinding
 import com.google.gson.JsonParser.parseString
 import kotlinx.coroutines.Dispatchers
@@ -75,7 +76,10 @@ class HomeFragment : Fragment() {
         poolHashrate = binding.poolHashrate
 
         minerPublicKey = binding.publicKey
-        loadSharedPrefs()
+        minerPublicKey!!.setText(Utils().loadSavedKey(requireContext().applicationContext))
+        if (minerPublicKey!!.text.isNotEmpty()) {
+            refreshPressed()
+        }
 
         refreshButton = binding.refreshBtn
         refreshButton!!.setOnClickListener {
@@ -110,18 +114,6 @@ class HomeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    private fun loadSharedPrefs() {
-        // TODO: Get shared preferences and check for miner public key
-        //  If the entry exists, fill it in and run the fetch automatically
-        val prefs = requireContext().getSharedPreferences("SUNPOOL_PREFS", MODE_PRIVATE)
-        val loadedKey = prefs.getString("PUBLIC_KEY", null)
-
-        minerPublicKey!!.setText(loadedKey)
-        if (minerPublicKey!!.text.isNotEmpty()) {
-            refreshPressed()
-        }
     }
 
     private fun refreshPressed() {
@@ -295,7 +287,7 @@ class HomeFragment : Fragment() {
             }
 
             val df = DecimalFormat("######.######")
-                    var start = "<th scope=\"row\">Last Hour Earnings:</th><td><span class=\"font-weight-bold pl-1\""
+            var start = "<th scope=\"row\">Last Hour Earnings:</th><td><span class=\"font-weight-bold pl-1\""
             var end = " Beam</span></td>"
             var part = builder.substring(builder.indexOf(start) + start.length)
             var line = part.substring(0, part.indexOf(end))
